@@ -1,2 +1,5 @@
-{:deps {}}
+{:deps {}
+ :aliases {:kibit {:extra-deps {jonase/kibit {:mvn/version "0.1.11"}}
+                   :exec-fn kibit.driver/exec
+                   :exec-args {:paths ["."]}}}}
 
