@@ -22,9 +22,6 @@
      :diagnosis "COVID-76"
      :treated   false}))
 
-;(defmacro factor-group [plist gname gmap & body]
-;  `(map (fn [~gname] (do ~@body))))
-
 (defn vec-itmes [li] (map (fn [e] (vec [e])) li))
 
 (defn get-variants [maps k]
@@ -51,20 +48,13 @@
         (map (fn [co] (cons (find-group plist ks co) co)) rcombos)))))
 
 (defmacro factor-group [plist gname gmap & body]
-  (list 'doall
-        (list 'map
-              (list 'fn ['x]
-                    (list 'apply
-                          (list 'fn (into [gname] (filter (comp not keyword?) gmap))
-                                (cons 'do body)) 'x))
-              (list 'make-groups plist (into [] (filter keyword? gmap))))))
-
-;(print (macroexpand '(factor-group all-patients gname gmap body)))
-
-;(defmacro if-not [cond iftrue iffalse]
-;  (list 'if cond iffalse iftrue))
-;
-; ooops if-not already exists...
+  (let [ykw# (filter keyword? gmap)
+        nkw# (filter (comp not keyword?) gmap)]
+    `(doall (map
+             (fn [props#] (apply
+                           (fn [~gname ~@nkw#] (do ~@body))
+                           props#))
+             (make-groups ~plist [~@ykw#])))))
 
 (defn decur [foo]
   (fn [& args]
@@ -82,14 +72,6 @@
 (defn juxtv [& funcs]
   (fn [& args] (map (fn [foo] (apply foo args)) funcs)))
 
-;(defn rm-dups [coll]
-;  (reduce
-;   (fn [c e] (if (contains? c e) c (conj c e)))
-;   []
-;   coll))
-;
-; ooooops distinct exists
-
 (defn mergefval [foo maps k]
   (let [vals (map (fn [m] (get m k))
                   (filter (fn [m] (contains? m k)) maps))]
@@ -101,8 +83,8 @@
   (let [rkeys (distinct (apply concat (map keys maps)))]
     (zipmap rkeys (map (partial mergefval foo maps) rkeys))))
 
-; all the "tests" combined
 (println
+ "tests:"
  (= 10 ((decur (fn [a]
                  (fn [b]
                    (fn [c]
